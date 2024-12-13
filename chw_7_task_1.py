@@ -26,13 +26,12 @@ class Birthday(Field):
     def __init__(self, value):
         try:
             datetime.strptime(value, "%d.%m.%Y")
-            value = datetime.strptime(value, "%d.%m.%Y").date()
+            self.value = value
             super().__init__(value)
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
 
 class Record:
-    birthday_list = []
 
     def __init__(self, name):
         self.name = Name(name)
@@ -44,7 +43,6 @@ class Record:
 
     def add_birthday(self, value):
         self.birthday = Birthday(value)
-        Record.birthday_list.append({"name": self.name.value, "birthday": self.birthday.value})
 
     def remove_phone(self, value):
         self.phones = [p for p in self.phones if p.value != value]
@@ -63,11 +61,11 @@ class Record:
                 None
         
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday}"
 
-class AddressBook(UserDict):  
+class AddressBook(UserDict): 
     def add_record(self, record):
-        self.data[record.name.value] = record
+        self.data.update({record.name.value: str(record)})
 
     def find(self, name) -> Record:
         return self.data.get(name)
@@ -75,43 +73,43 @@ class AddressBook(UserDict):
     def delete(self, name):
         del self.data[name]
 
+    def string_to_date(date_string):
+        return datetime.strptime(date_string, "%d.%m.%Y").date()
+
     def date_to_string(date):
         return date.strftime("%d.%m.%Y")
-   
+    
     def find_next_weekday(start_date, weekday):
         days_ahead = weekday - start_date.weekday()
         if days_ahead <= 0:
             days_ahead += 7
         return start_date + timedelta(days=days_ahead)
-
+    
     def adjust_for_weekend(birthday):
         if birthday.weekday() >= 5:
             return AddressBook.find_next_weekday(birthday, 0)
         return birthday
-
+    
     def get_upcoming_birthdays(self, days=7):
         upcoming_birthdays = []
-        today = AddressBook.find_next_weekday(date.today(), 0)
-        for el in Record.birthday_list:
-            birthday_this_year = el["birthday"].replace(year=today.year)
+        today = date.today()
+        for key in self.data:
+            _, birthday = self.data.get(key).split("birthday: ")
+            birthday_this_year = AddressBook.string_to_date(birthday).replace(year=today.year)
             if birthday_this_year < today:
-                birthday_this_year = el["birthday"].replace(year=today.year + 1)
+                birthday_this_year = birthday.replace(year=today.year + 1)
             if 0 <= (AddressBook.adjust_for_weekend(birthday_this_year) - today).days <= days:
                 congratulation_date_str = AddressBook.date_to_string(AddressBook.adjust_for_weekend(birthday_this_year))
-                upcoming_birthdays.append({"name": el["name"], "birthday": congratulation_date_str})
+                upcoming_birthdays.append({"name": key, "birthday": congratulation_date_str})
         return upcoming_birthdays
     
     def show_birthday(self, name):
-        for el in Record.birthday_list:
-            if el["name"] == name:
-                return AddressBook.date_to_string(el.get("birthday"))
-            else:
-                None
+        _, birthday = self.data.get(name).split("birthday: ")
+        return birthday
     
     def __str__(self):
-        return f"Record in AddressBook:\n{("\n".join(el for el in self.data))}"
+        return f"Record in your AddressBook, amigo:\n{"\n".join(self.data.get(key) for key in self.data)}"
         
-
 def parse_input(user_input):
     cmd, *args = user_input.split()
     cmd = cmd.strip().lower()
@@ -204,7 +202,7 @@ def main():
             print("Good bye!")
             break
         elif command == "hello":
-            print("How can I help you?")
+            print("Hola, amigo! How can I help you?")
         elif command == "add":
             print(add_contact(args, book))
         elif command == "change":
