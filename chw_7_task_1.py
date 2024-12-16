@@ -32,7 +32,6 @@ class Birthday(Field):
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
 
 class Record:
-
     def __init__(self, name):
         self.name = Name(name)
         self.phones = []
@@ -65,7 +64,7 @@ class Record:
 
 class AddressBook(UserDict): 
     def add_record(self, record):
-        self.data.update({record.name.value: str(record)})
+        self.data.update({record.name.value: record})
 
     def find(self, name) -> Record:
         return self.data.get(name)
@@ -94,22 +93,23 @@ class AddressBook(UserDict):
         upcoming_birthdays = []
         today = date.today()
         for key in self.data:
-            _, birthday = self.data.get(key).split("birthday: ")
+            _, birthday = str(self.data.get(key)).split("birthday: ")
             birthday_this_year = AddressBook.string_to_date(birthday).replace(year=today.year)
             if birthday_this_year < today:
-                birthday_this_year = birthday.replace(year=today.year + 1)
+                birthday_this_year = AddressBook.string_to_date(birthday).replace(year=today.year + 1)
             if 0 <= (AddressBook.adjust_for_weekend(birthday_this_year) - today).days <= days:
                 congratulation_date_str = AddressBook.date_to_string(AddressBook.adjust_for_weekend(birthday_this_year))
                 upcoming_birthdays.append({"name": key, "birthday": congratulation_date_str})
         return upcoming_birthdays
     
     def show_birthday(self, name):
-        _, birthday = self.data.get(name).split("birthday: ")
+        _, birthday = str(self.data.get(name)).split("birthday: ")
         return birthday
     
     def __str__(self):
-        return f"Record in your AddressBook, amigo:\n{"\n".join(self.data.get(key) for key in self.data)}"
-        
+        return f"Record in your AddressBook, amigo:\n{"\n".join(str(self.data.get(key)) for key in self.data)}"
+    
+    
 def parse_input(user_input):
     cmd, *args = user_input.split()
     cmd = cmd.strip().lower()
@@ -120,11 +120,7 @@ def input_error(func):
         try:
             return func(*args, **kwargs)
         except ValueError:
-            return """
-            if you want to add or change a contact, enter name
-            and phone for the command.
-            And if you want to view a phone, enter a name for the command.
-            """
+            return "Sorry, enter a relevant command or detalis"
         except KeyError:
             return "This key is not relevant for the command"
         except IndexError:
