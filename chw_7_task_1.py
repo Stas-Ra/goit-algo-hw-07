@@ -96,15 +96,15 @@ class AddressBook(UserDict):
     def get_upcoming_birthdays(self, days=7):
         upcoming_birthdays = []
         today = date.today()
-        for record in self.data:
+        for record in self.data.values():
             try:
-                birthday = str(self.data.get(record).birthday)
+                birthday = str(record.birthday)
                 birthday_this_year = self.string_to_date(birthday).replace(year=today.year)
                 if birthday_this_year < today:
                     birthday_this_year = self.string_to_date(birthday).replace(year=today.year + 1)
                 if 0 <= (self.adjust_for_weekend(birthday_this_year) - today).days <= days:
                     congratulation_date_str = self.date_to_string(self.adjust_for_weekend(birthday_this_year))
-                    upcoming_birthdays.append({"name": record, "birthday": congratulation_date_str})
+                    upcoming_birthdays.append({"name": record.name.value, "birthday": congratulation_date_str})
             except ValueError:
                 pass    
         return upcoming_birthdays
