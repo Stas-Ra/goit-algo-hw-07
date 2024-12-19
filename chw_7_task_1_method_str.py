@@ -72,45 +72,42 @@ class AddressBook(UserDict):
     def delete(self, name):
         del self.data[name]
 
-    @staticmethod
     def string_to_date(date_string):
         return datetime.strptime(date_string, "%d.%m.%Y").date()
-    
-    @staticmethod
+
     def date_to_string(date):
         return date.strftime("%d.%m.%Y")
     
-    @staticmethod
     def find_next_weekday(start_date, weekday):
         days_ahead = weekday - start_date.weekday()
         if days_ahead <= 0:
             days_ahead += 7
         return start_date + timedelta(days=days_ahead)
     
-    @classmethod
-    def adjust_for_weekend(cls, birthday):
+    def adjust_for_weekend(birthday):
         if birthday.weekday() >= 5:
-            return cls.find_next_weekday(birthday, 0)
+            return AddressBook.find_next_weekday(birthday, 0)
         return birthday
     
     def get_upcoming_birthdays(self, days=7):
         upcoming_birthdays = []
         today = date.today()
-        for record in self.data:
+        for key in self.data:
             try:
-                birthday = str(self.data.get(record).birthday)
-                birthday_this_year = self.string_to_date(birthday).replace(year=today.year)
+                _, birthday = str(self.data.get(key)).split("birthday: ")
+                birthday_this_year = AddressBook.string_to_date(birthday).replace(year=today.year)
                 if birthday_this_year < today:
-                    birthday_this_year = self.string_to_date(birthday).replace(year=today.year + 1)
-                if 0 <= (self.adjust_for_weekend(birthday_this_year) - today).days <= days:
-                    congratulation_date_str = self.date_to_string(self.adjust_for_weekend(birthday_this_year))
-                    upcoming_birthdays.append({"name": record, "birthday": congratulation_date_str})
+                    birthday_this_year = AddressBook.string_to_date(birthday).replace(year=today.year + 1)
+                if 0 <= (AddressBook.adjust_for_weekend(birthday_this_year) - today).days <= days:
+                    congratulation_date_str = AddressBook.date_to_string(AddressBook.adjust_for_weekend(birthday_this_year))
+                    upcoming_birthdays.append({"name": key, "birthday": congratulation_date_str})
             except ValueError:
-                pass    
+                pass
         return upcoming_birthdays
 
     def show_birthday(self, name):
-        return self.data.get(name).birthday
+        _, birthday = str(self.data.get(name)).split("birthday: ")
+        return birthday
     
     def __str__(self):
         return f"Record in your AddressBook, amigo:\n{"\n".join(str(self.data.get(key)) for key in self.data)}"
